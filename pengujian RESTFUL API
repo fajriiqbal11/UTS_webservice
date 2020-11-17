@@ -1,0 +1,85 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+require APPPATH . '/libraries/REST_Controller.php';
+use Restserver\Libraries\REST_Controller;
+
+class Penulis extends REST_Controller{
+
+    function __construct($config = "rest"){
+        parent::__construct($config);
+        $this->load->database();
+    }
+
+    public function index_get(){
+
+        $id = $this->get('id');
+        $penulis=[];
+        if($id == ''){
+            $data = $this->db->get('penulis')->result();
+            foreach($data as $row=>$key):
+                $penulis[]=["PenulisId"=>$key->PenulisId,
+                            "PenulisName"=>$key->PenulisName,
+                            "_links"=>[(object)["href"=>"Nomer{$key->PenulisId}",
+                                        "rel"=>"penulis",
+                                        "type"=>"GET"]]
+                        ];
+                    endforeach;
+        }else{
+            $this->db->where('PenulisId', $id);
+            $penulis = $this->db->get('penulis')->result();
+        }
+        $result=["took"=>$_SERVER["REQUEST_TIME_FLOAT"],
+                 "code"=>200,
+                 "message"=>"Response Successfully",
+                 "data"=>$penulis];
+        $this->response($result, 200);
+    }
+
+    public function index_post(){
+        $data = array(
+                    'PenulisId' => $this->post('PenulisId'),
+                    'PenulisName' => $this->post('PenulisName'));
+        $insert = $this->db->insert('penulis', $data);
+        if($insert){
+            $result = ["took" => $_SERVER["REQUEST_TIME_FLOAT"],
+                       "code"=>201,
+                       "message"=>"Data has successfully added",
+                       "data"=>$data];
+            $this->response($result, 201);
+        }else{
+            $result = ["took"=>$_SERVER["REQUEST_TIME_FLOAT"],
+                       "code"=>502,
+                       "message"=>"Failed adding data",
+                       "data"=>null];
+            $this->response($result, 502);
+        }
+    }
+
+    function index_put(){
+        $id = $this->get('id');
+        $data = array(
+                    'PenulisId' => $this->put('PenulisId'),
+                    'PenulisName' => $this->put('PenulisName'));
+        $this->db->where('PenulisId', $id);
+        $update = $this->db->update('penulis', $data);
+        if($update){
+            $this->response($data, 200);
+        } else{
+            $this->response(array('status' => 'fail', 502));
+        }
+    }
+
+    function index_delete() {
+        $id = $this->get('id');
+        $this->db->where('PenulisId', $id);
+        $delete = $this->db->delete('penulis');
+        if ($delete) {
+            $this->response(array('status' => 'berhasil'), 201);
+        } else{
+            $this->response(array('status' => 'gagal', 502));
+        }
+    }
+}
+
+?>
